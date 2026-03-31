@@ -29,7 +29,7 @@ document.querySelectorAll('.nav-links a').forEach(link => {
 // Scroll Reveal Animation using IntersectionObserver
 const revealElements = document.querySelectorAll('.reveal');
 
-const revealCallback = function(entries, observer) {
+const revealCallback = function (entries, observer) {
     entries.forEach(entry => {
         if (entry.isIntersecting) {
             entry.target.classList.add('active');
@@ -57,15 +57,15 @@ if (contactForm) {
         e.preventDefault();
         const btn = contactForm.querySelector('button');
         const originalText = btn.textContent;
-        
+
         btn.textContent = 'Sending...';
         btn.disabled = true;
-        
+
         // Mock API call delay
         setTimeout(() => {
             btn.textContent = 'Message Sent!';
             contactForm.reset();
-            
+
             setTimeout(() => {
                 btn.textContent = originalText;
                 btn.disabled = false;
@@ -83,9 +83,9 @@ const typingElement = document.querySelector(".typing-text");
 
 function typeEffect() {
     if (!typingElement) return;
-    
+
     const currentWord = typedWords[wordIndex];
-    
+
     if (isDeleting) {
         typingElement.textContent = currentWord.substring(0, charIndex - 1);
         charIndex--;
@@ -93,9 +93,9 @@ function typeEffect() {
         typingElement.textContent = currentWord.substring(0, charIndex + 1);
         charIndex++;
     }
-    
+
     let typeSpeed = isDeleting ? 40 : 100;
-    
+
     if (!isDeleting && charIndex === currentWord.length) {
         typeSpeed = 2000; // Pause at end of word
         isDeleting = true;
@@ -104,59 +104,101 @@ function typeEffect() {
         wordIndex = (wordIndex + 1) % typedWords.length;
         typeSpeed = 400; // Pause before next word
     }
-    
+
     setTimeout(typeEffect, typeSpeed);
 }
 
 // Start typing effect
 setTimeout(typeEffect, 1000);
 
-// Project Image Carousels
-document.querySelectorAll('.project-carousel').forEach(carousel => {
-    const track = carousel.querySelector('.carousel-track');
-    const slides = Array.from(track.children);
-    const nextButton = carousel.querySelector('.carousel-btn.next');
-    const prevButton = carousel.querySelector('.carousel-btn.prev');
-    const dotsNav = carousel.querySelector('.carousel-nav');
-    if (!dotsNav) return;
-    const dots = Array.from(dotsNav.children);
+// Gallery Modal Logic
+const galleryBtns = document.querySelectorAll('.gallery-btn');
+const modalOverlay = document.getElementById('gallery-modal');
+const closeModal = document.getElementById('close-modal');
+const modalTrack = document.getElementById('modal-track');
+const modalNav = document.getElementById('modal-nav');
+const modalPrev = document.getElementById('modal-prev');
+const modalNext = document.getElementById('modal-next');
+let modalCurrentIndex = 0;
+let modalSlides = [];
+let modalDots = [];
 
-    if (slides.length <= 1) {
-        if(nextButton) nextButton.style.display = 'none';
-        if(prevButton) prevButton.style.display = 'none';
-        dotsNav.style.display = 'none';
-        return;
-    }
+const updateModalCarousel = (index) => {
+    modalTrack.style.transform = 'translateX(-' + (index * 100) + '%)';
+    modalDots.forEach(dot => dot.classList.remove('current-slide'));
+    if(modalDots[index]) modalDots[index].classList.add('current-slide');
+};
 
-    let currentIndex = 0;
-
-    const updateCarousel = (index) => {
-        track.style.transform = 'translateX(-' + (index * 100) + '%)';
-        dots.forEach(dot => dot.classList.remove('current-slide'));
-        dots[index].classList.add('current-slide');
-    };
-
-    if(nextButton) {
-        nextButton.addEventListener('click', () => {
-            currentIndex = (currentIndex === slides.length - 1) ? 0 : currentIndex + 1;
-            updateCarousel(currentIndex);
+galleryBtns.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const imagesStr = btn.getAttribute('data-images');
+        if(!imagesStr) return;
+        
+        const images = imagesStr.split(',');
+        
+        // Clear existing
+        modalTrack.innerHTML = '';
+        modalNav.innerHTML = '';
+        modalSlides = [];
+        modalDots = [];
+        modalCurrentIndex = 0;
+        
+        // Populate
+        images.forEach((imgSrc, i) => {
+            const img = document.createElement('img');
+            img.src = imgSrc;
+            img.className = 'carousel-slide';
+            img.style.objectFit = 'contain';
+            img.style.width = '100%';
+            img.style.flexShrink = '0';
+            modalTrack.appendChild(img);
+            modalSlides.push(img);
+            
+            const dot = document.createElement('button');
+            dot.className = 'carousel-indicator';
+            if(i === 0) dot.classList.add('current-slide');
+            dot.addEventListener('click', () => {
+                modalCurrentIndex = i;
+                updateModalCarousel(modalCurrentIndex);
+            });
+            modalNav.appendChild(dot);
+            modalDots.push(dot);
         });
-    }
-
-    if(prevButton) {
-        prevButton.addEventListener('click', () => {
-            currentIndex = (currentIndex === 0) ? slides.length - 1 : currentIndex - 1;
-            updateCarousel(currentIndex);
-        });
-    }
-
-    dots.forEach((dot, index) => {
-        dot.addEventListener('click', () => {
-            currentIndex = index;
-            updateCarousel(currentIndex);
-        });
+        
+        updateModalCarousel(0);
+        modalOverlay.classList.add('active');
+        document.body.style.overflow = 'hidden'; // prevent scrolling behind
     });
 });
+
+closeModal.addEventListener('click', () => {
+    modalOverlay.classList.remove('active');
+    document.body.style.overflow = '';
+});
+
+modalOverlay.addEventListener('click', (e) => {
+    if(e.target === modalOverlay) {
+        modalOverlay.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+});
+
+if(modalNext) {
+    modalNext.addEventListener('click', () => {
+        if(modalSlides.length <= 1) return;
+        modalCurrentIndex = (modalCurrentIndex === modalSlides.length - 1) ? 0 : modalCurrentIndex + 1;
+        updateModalCarousel(modalCurrentIndex);
+    });
+}
+
+if(modalPrev) {
+    modalPrev.addEventListener('click', () => {
+        if(modalSlides.length <= 1) return;
+        modalCurrentIndex = (modalCurrentIndex === 0) ? modalSlides.length - 1 : modalCurrentIndex - 1;
+        updateModalCarousel(modalCurrentIndex);
+    });
+}
 
 // Background Spark Particles
 const canvas = document.getElementById('spark-canvas');
